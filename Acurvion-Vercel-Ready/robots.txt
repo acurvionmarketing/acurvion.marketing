@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://acurvionmarketing.vercel.app/sitemap.xml
+Sitemap: https://acurvion.com/sitemap.xml
