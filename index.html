@@ -54,7 +54,7 @@
     rel="stylesheet">
 
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="styles.css?v=2.2">
+  <link rel="stylesheet" href="styles.css?v=2.3">
 
   <!-- Structured Data: Organization, LocalBusiness & FAQPage JSON-LD -->
   <script type="application/ld+json">
@@ -170,6 +170,7 @@
 
   <!-- ================= HEADER (jodbs.com signature sticky navbar) ================= -->
   <header class="home-header" id="siteHeader">
+    <div class="scroll-progress-bar" id="scrollProgressBar" aria-hidden="true"></div>
     <div class="container home-header-inner">
 
       <a href="https://acurvionmarketing.vercel.app/" class="home-logo" aria-label="Acurvion Marketing Agency">
@@ -286,6 +287,23 @@
         <a href="#journey" class="home-nav-link">Our Approach</a>
         <a href="#faq" class="home-nav-link">FAQ</a>
         <a href="#contact" class="home-nav-link" data-consult-trigger>Contact</a>
+
+        <div class="home-nav-mobile-cta">
+          <button type="button" class="home-btn home-btn-primary" data-consult-trigger style="width: 100%;">
+            <span>Book Free Consultation</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M5 12h14M13 6l6 6-6 6" />
+            </svg>
+          </button>
+          <a href="https://wa.me/918825468608?text=Hello%20Acurvion,%20I%20want%20to%20book%20a%20free%20consultation%20call."
+            class="home-btn home-btn-whatsapp" target="_blank" rel="noopener" style="width: 100%; margin-top: 10px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path
+                d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z" />
+            </svg>
+            <span>Chat on WhatsApp</span>
+          </a>
+        </div>
       </nav>
 
       <!-- Action Buttons -->
@@ -314,6 +332,7 @@
 
     </div>
   </header>
+  <div class="home-nav-backdrop" id="homeNavBackdrop" aria-hidden="true"></div>
 
   <main>
     <!-- ================= HERO SECTION (jodbs.com signature visual style) ================= -->
@@ -414,6 +433,9 @@
             </div>
 
             <div class="home-chart-preview">
+              <div class="home-chart-media">
+                <img src="assets/hero-data-stream.jpg" alt="Acurvion Data Stream Engine" class="home-chart-img" width="48" height="48" loading="lazy">
+              </div>
               <div class="home-chart-text">
                 <h5>Turn Digital Attention Into Revenue</h5>
                 <p>Strategic SEO, PPC &amp; Web Conversion Framework</p>
@@ -1216,6 +1238,20 @@
                 <span>7th Cross St, Brindavan Nagar, Avadi, Chennai 600055</span>
               </div>
             </div>
+
+            <!-- Instant WhatsApp QR Code -->
+            <div class="home-cta-qr-box">
+              <div class="home-cta-qr-frame">
+                <img src="assets/Acurvion-QR-Code.svg" alt="Scan to connect with Acurvion on WhatsApp" class="home-cta-qr-img" width="80" height="80">
+              </div>
+              <div class="home-cta-qr-info">
+                <div class="home-cta-qr-badge">
+                  <span class="home-pulse-dot"></span>
+                  <span>Instant Mobile Scan</span>
+                </div>
+                <p>Point phone camera to start direct strategy WhatsApp chat.</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1333,6 +1369,11 @@
 
   <!-- ================= FLOATING ACTION BUTTONS ================= -->
   <aside class="floating-actions" aria-label="Instant Contact Options">
+    <button type="button" id="scrollTopBtn" class="floating-scroll-top" aria-label="Scroll back to top">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20">
+        <path d="M18 15l-6-6-6 6"/>
+      </svg>
+    </button>
     <a href="https://wa.me/918825468608?text=Hello%20Acurvion,%20I%20would%20like%20to%20discuss%20a%20digital%20marketing%20strategy%20for%20my%20business."
       class="floating-whatsapp-btn" target="_blank" rel="noopener" aria-label="Chat Directly on WhatsApp">
       <span class="floating-pulse"></span>
@@ -1347,55 +1388,63 @@
   <div class="modal-overlay" id="consultModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <div class="modal-dialog">
       <button class="modal-close-btn" id="closeConsultModal" aria-label="Close modal">&times;</button>
-      <div class="modal-header">
-        <span class="home-eyebrow" style="margin-bottom: 12px;">FREE 30-MIN STRATEGY CALL</span>
-        <h3 id="modalTitle">Book Your Digital Growth Session</h3>
-        <p>Speak directly with our lead growth strategist. No high-pressure sales — just actionable insights to scale
-          your search presence and inbound leads.</p>
+      
+      <div id="modalFormContainer">
+        <div class="modal-header">
+          <span class="home-eyebrow" style="margin-bottom: 12px;">FREE 30-MIN STRATEGY CALL</span>
+          <h3 id="modalTitle">Book Your Digital Growth Session</h3>
+          <p>Speak directly with our lead growth strategist. No high-pressure sales — just actionable insights to scale
+            your search presence and inbound leads.</p>
+        </div>
+
+        <form id="consultForm" class="modal-form" novalidate>
+          <div class="form-group">
+            <label for="consultName">Your Full Name *</label>
+            <input type="text" id="consultName" class="form-control" placeholder="e.g. Mohammed Ajmal" required>
+            <span class="form-error-msg" id="nameError">Please enter your name</span>
+          </div>
+
+          <div class="form-group">
+            <label for="consultPhone">Phone / WhatsApp Number *</label>
+            <input type="tel" id="consultPhone" class="form-control" placeholder="e.g. +91 88254 68608" required>
+            <span class="form-error-msg" id="phoneError">Please enter a valid phone number (min 7 digits)</span>
+          </div>
+
+          <div class="form-group">
+            <label for="consultEmail">Business Email Address *</label>
+            <input type="email" id="consultEmail" class="form-control" placeholder="e.g. ajmal@company.com" required>
+            <span class="form-error-msg" id="emailError">Please enter a valid email address</span>
+          </div>
+
+          <div class="form-group">
+            <label for="modalService">Primary Service Needed *</label>
+            <select id="modalService" class="form-control" required>
+              <option value="Search Engine Optimization (SEO)">Search Engine Optimization (SEO)</option>
+              <option value="Google Ads & PPC Management">Google Ads &amp; PPC Management</option>
+              <option value="Social Media Marketing">Social Media Marketing</option>
+              <option value="Website Design & Development">Website Design &amp; Development</option>
+              <option value="Content Marketing & Copywriting">Content Marketing &amp; Copywriting</option>
+              <option value="Branding & Visual Identity">Branding &amp; Visual Identity</option>
+              <option value="Full Omnichannel Growth Package">Full Omnichannel Growth Package</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="consultNotes">Tell Us About Your Project &amp; Goals</label>
+            <textarea id="consultNotes" class="form-control"
+              placeholder="What is your website URL? What are your target revenue or lead goals?"></textarea>
+          </div>
+
+          <button type="submit" id="consultSubmitBtn" class="home-btn home-btn-primary" style="width: 100%; margin-top: 8px;">
+            <span>Reserve Strategy Session</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M5 12h14M13 6l6 6-6 6" />
+            </svg>
+          </button>
+        </form>
       </div>
 
-      <form id="consultForm" class="modal-form">
-        <div class="form-group">
-          <label for="consultName">Your Full Name *</label>
-          <input type="text" id="consultName" class="form-control" placeholder="e.g. Mohammed Ajmal" required>
-        </div>
-
-        <div class="form-group">
-          <label for="consultPhone">Phone / WhatsApp Number *</label>
-          <input type="tel" id="consultPhone" class="form-control" placeholder="e.g. +91 88254 68608" required>
-        </div>
-
-        <div class="form-group">
-          <label for="consultEmail">Business Email Address *</label>
-          <input type="email" id="consultEmail" class="form-control" placeholder="e.g. ajmal@company.com" required>
-        </div>
-
-        <div class="form-group">
-          <label for="modalService">Primary Service Needed *</label>
-          <select id="modalService" class="form-control" required>
-            <option value="Search Engine Optimization (SEO)">Search Engine Optimization (SEO)</option>
-            <option value="Google Ads & PPC Management">Google Ads &amp; PPC Management</option>
-            <option value="Social Media Marketing">Social Media Marketing</option>
-            <option value="Website Design & Development">Website Design &amp; Development</option>
-            <option value="Content Marketing & Copywriting">Content Marketing &amp; Copywriting</option>
-            <option value="Branding & Visual Identity">Branding &amp; Visual Identity</option>
-            <option value="Full Omnichannel Growth Package">Full Omnichannel Growth Package</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label for="consultNotes">Tell Us About Your Project &amp; Goals</label>
-          <textarea id="consultNotes" class="form-control"
-            placeholder="What is your website URL? What are your target revenue or lead goals?"></textarea>
-        </div>
-
-        <button type="submit" class="home-btn home-btn-primary" style="width: 100%; margin-top: 8px;">
-          <span>Reserve Strategy Session</span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M5 12h14M13 6l6 6-6 6" />
-          </svg>
-        </button>
-      </form>
+      <div id="modalSuccessContainer" style="display: none;"></div>
     </div>
   </div>
 
