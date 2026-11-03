@@ -6,17 +6,29 @@
  * Address: Avadi, Chennai, Tamil Nadu 600055, India
  */
 
-document.addEventListener('DOMContentLoaded', () => {
-  initHeader();
-  initMobileNav();
-  initScrollSpy();
-  initServiceTabs();
-  initFaqAccordion();
-  initModals();
-  initCounters();
-  initScrollTop();
-  initSmoothScroll();
-});
+if (typeof document !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', () => {
+    initHeader();
+    initMobileNav();
+    initScrollSpy();
+    initServiceTabs();
+    initFaqAccordion();
+    initModals();
+    initCounters();
+    initScrollTop();
+    initSmoothScroll();
+  });
+}
+
+// Fallback in case a Node.js serverless runtime attempts to execute this file
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = (req, res) => {
+    if (res && typeof res.writeHead === 'function') {
+      res.writeHead(302, { Location: '/' });
+      res.end();
+    }
+  };
+}
 
 /* ==========================================================================
    1. STICKY HEADER, SCROLL PROGRESS & ACTIVE STATES
