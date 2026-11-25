@@ -1,22 +1,38 @@
 /**
- * ACURVION MARKETING AGENCY — CLIENT-SIDE INTERACTIVE ENGINE
- * Brand: Acurvion Marketing Agency
+ * ACURVION MARKETING — CLIENT-SIDE INTERACTIVE ENGINE
+ * Official Brand: Acurvion Marketing
  * Tagline: We Turn Attention Into Growth.
+ * Email: acurvion.marketing@gmail.com
  * Phone / WhatsApp: +91 88254 68608
  * Address: Avadi, Chennai, Tamil Nadu 600055, India
  */
 
-document.addEventListener('DOMContentLoaded', () => {
-  initHeader();
-  initMobileNav();
-  initScrollSpy();
-  initServiceTabs();
-  initFaqAccordion();
-  initModals();
-  initCounters();
-  initScrollTop();
-  initSmoothScroll();
-});
+if (typeof document !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', () => {
+    initHeader();
+    initMobileNav();
+    initScrollSpy();
+    initServiceTabs();
+    initPortfolioTabs();
+    initFaqAccordion();
+    initModals();
+    initFeatureCards();
+    initAboutAnimations();
+    initScrollTop();
+    initSmoothScroll();
+    initEventTracking();
+  });
+}
+
+// Fallback in case a Node.js serverless runtime attempts to execute this file
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = (req, res) => {
+    if (res && typeof res.writeHead === 'function') {
+      res.writeHead(302, { Location: '/' });
+      res.end();
+    }
+  };
+}
 
 /* ==========================================================================
    1. STICKY HEADER, SCROLL PROGRESS & ACTIVE STATES
@@ -174,7 +190,35 @@ function initServiceTabs() {
 }
 
 /* ==========================================================================
-   5. FAQ ACCORDION WITH FILTER PILLS & SMOOTH HEIGHT
+   5. PORTFOLIO & DEMONSTRATION PROJECTS CATEGORY TABS
+   ========================================================================== */
+function initPortfolioTabs() {
+  const tabs = document.querySelectorAll('.home-portfolio-tab');
+  const cards = document.querySelectorAll('.home-portfolio-card');
+  if (!tabs.length || !cards.length) return;
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+
+      const filter = tab.getAttribute('data-portfolio-filter') || 'all';
+
+      cards.forEach(card => {
+        const category = card.getAttribute('data-category');
+        if (filter === 'all' || category === filter) {
+          card.style.display = 'flex';
+          card.style.animation = 'fadeIn 0.35s ease forwards';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    });
+  });
+}
+
+/* ==========================================================================
+   6. FAQ ACCORDION WITH FILTER PILLS & SMOOTH HEIGHT
    ========================================================================== */
 function initFaqAccordion() {
   const faqItems = document.querySelectorAll('.home-faq-item');
@@ -207,7 +251,6 @@ function initFaqAccordion() {
         } else {
           item.classList.add('open');
           question.setAttribute('aria-expanded', 'true');
-          // Add extra buffer for comfortable internal padding
           answer.style.maxHeight = (answer.scrollHeight + 32) + 'px';
         }
       });
@@ -243,20 +286,25 @@ function initFaqAccordion() {
 }
 
 /* ==========================================================================
-   6. CONSULTATION BOOKING & CONTACT MODALS
+   7. CONSULTATION & AUDIT MODAL WITH HUBSPOT CRM & VALIDATION
    ========================================================================== */
 function initModals() {
   const modal = document.getElementById('consultModal');
-  const triggers = document.querySelectorAll('[data-consult-trigger]');
+  const triggers = document.querySelectorAll('[data-consult-trigger], [data-audit-trigger]');
   const closeBtn = document.getElementById('closeConsultModal');
   const form = document.getElementById('consultForm');
   const serviceSelect = document.getElementById('modalService');
   const formContainer = document.getElementById('modalFormContainer');
   const successContainer = document.getElementById('modalSuccessContainer');
+  const modalTitle = document.getElementById('modalTitle');
+  const modalEyebrow = document.getElementById('modalEyebrow');
+  const modalLead = document.getElementById('modalLead');
 
   if (!modal) return;
 
-  const openModal = (preselectedService = '') => {
+  let currentInquiryType = 'Growth Consultation';
+
+  const openModal = (preselectedService = '', inquiryMode = 'consultation') => {
     modal.classList.add('open');
     document.body.style.overflow = 'hidden';
 
@@ -265,6 +313,18 @@ function initModals() {
     if (successContainer) {
       successContainer.style.display = 'none';
       successContainer.innerHTML = '';
+    }
+
+    if (inquiryMode === 'audit') {
+      currentInquiryType = 'Free Website & SEO Audit';
+      if (modalTitle) modalTitle.innerText = 'Request Your Free Website & Growth Audit';
+      if (modalEyebrow) modalEyebrow.innerText = 'COMPREHENSIVE DIGITAL AUDIT';
+      if (modalLead) modalLead.innerText = 'Receive a 360-degree audit of your website speed, search visibility, conversion bottlenecks, and competitor keyword gaps.';
+    } else {
+      currentInquiryType = 'Growth Consultation';
+      if (modalTitle) modalTitle.innerText = 'Book Your Free Growth Consultation';
+      if (modalEyebrow) modalEyebrow.innerText = 'FREE 30-MIN STRATEGY CALL';
+      if (modalLead) modalLead.innerText = 'Speak directly with our senior growth strategist. No high-pressure sales — just actionable insights to scale your digital presence.';
     }
 
     if (serviceSelect && preselectedService) {
@@ -285,7 +345,8 @@ function initModals() {
     btn.addEventListener('click', (e) => {
       e.preventDefault();
       const s = btn.getAttribute('data-service') || '';
-      openModal(s);
+      const isAudit = btn.hasAttribute('data-audit-trigger');
+      openModal(s, isAudit ? 'audit' : 'consultation');
     });
   });
 
@@ -301,23 +362,31 @@ function initModals() {
     }
   });
 
-  // Handle Form Submission & Validation
+  // Handle Form Submission & Validation with HubSpot Backend Sync
   if (form) {
-    form.addEventListener('submit', (e) => {
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
       const nameEl = document.getElementById('consultName');
-      const phoneEl = document.getElementById('consultPhone');
+      const companyEl = document.getElementById('consultCompany');
       const emailEl = document.getElementById('consultEmail');
+      const phoneEl = document.getElementById('consultPhone');
+      const websiteEl = document.getElementById('consultWebsite');
       const serviceEl = document.getElementById('modalService');
+      const budgetEl = document.getElementById('consultBudget');
       const notesEl = document.getElementById('consultNotes');
+      const consentEl = document.getElementById('consultConsent');
       const submitBtn = document.getElementById('consultSubmitBtn');
 
       const name = nameEl ? nameEl.value.trim() : '';
-      const phone = phoneEl ? phoneEl.value.trim() : '';
+      const company = companyEl ? companyEl.value.trim() : '';
       const email = emailEl ? emailEl.value.trim() : '';
+      const phone = phoneEl ? phoneEl.value.trim() : '';
+      const website = websiteEl ? websiteEl.value.trim() : '';
       const service = serviceEl ? serviceEl.value : '';
+      const budget = budgetEl ? budgetEl.value : '';
       const notes = notesEl ? notesEl.value.trim() : '';
+      const consent = consentEl ? consentEl.checked : false;
 
       // Inline validation
       let hasError = false;
@@ -332,143 +401,213 @@ function initModals() {
         hasError = true;
       }
 
-      const phoneRegex = /[0-9]{7,15}/;
-      if (!phone || !phoneRegex.test(phone.replace(/[^0-9]/g, ''))) {
-        if (phoneEl) phoneEl.closest('.form-group').classList.add('has-error');
-        hasError = true;
-      }
-
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!email || !emailRegex.test(email)) {
         if (emailEl) emailEl.closest('.form-group').classList.add('has-error');
         hasError = true;
       }
 
-      if (hasError) return;
-
-      const refId = 'ACV-' + Math.floor(100000 + Math.random() * 900000);
-
-      const waText = encodeURIComponent(
-        `*New Website Growth Inquiry — Ref: ${refId}*\n\n` +
-        `• Name: ${name}\n` +
-        `• Phone/WhatsApp: ${phone}\n` +
-        `• Business Email: ${email}\n` +
-        `• Service Interest: ${service}\n` +
-        `• Project Requirements: ${notes || 'Immediate consultation requested'}\n\n` +
-        `Please confirm available consultation slots.`
-      );
-
-      const waUrl = `https://wa.me/918825468608?text=${waText}`;
-
-      // Loading state on button
-      if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = `<span>Connecting to Strategist...</span>`;
+      const cleanPhone = phone.replace(/[^0-9+]/g, '');
+      if (!cleanPhone || cleanPhone.length < 7) {
+        if (phoneEl) phoneEl.closest('.form-group').classList.add('has-error');
+        hasError = true;
       }
 
-      setTimeout(() => {
-        if (submitBtn) {
-          submitBtn.disabled = false;
-          submitBtn.innerHTML = `<span>Reserve Strategy Session</span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6" /></svg>`;
+      if (!service) {
+        if (serviceEl) serviceEl.closest('.form-group').classList.add('has-error');
+        hasError = true;
+      }
+
+      if (!consent) {
+        if (consentEl) consentEl.closest('.form-group').classList.add('has-error');
+        hasError = true;
+      }
+
+      if (hasError) return;
+
+      // Button loading state
+      const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `<span>Submitting Inquiry...</span>`;
+      }
+
+      const leadPayload = {
+        fullName: name,
+        businessName: company,
+        email: email,
+        phone: phone,
+        website: website,
+        service: service,
+        budget: budget,
+        requirements: notes,
+        consent: consent,
+        inquiryType: currentInquiryType,
+        sourceUrl: window.location.href
+      };
+
+      try {
+        const response = await fetch('/api/submit-lead', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(leadPayload)
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          // Track Conversion Event
+          trackConversionEvent('contact_form_submission', {
+            service: service,
+            budget: budget,
+            inquiry_type: currentInquiryType,
+            ref_id: result.refId
+          });
+
+          // Show authentic success view
+          if (formContainer) formContainer.style.display = 'none';
+          if (successContainer) {
+            successContainer.style.display = 'block';
+            successContainer.innerHTML = `
+              <div style="text-align: center; padding: 20px 0;">
+                <div style="width: 64px; height: 64px; border-radius: 50%; background: #e8f5e9; color: #2e7d32; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; box-shadow: 0 4px 14px rgba(46,125,50,0.2);">
+                  <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <h3 style="font-size: 1.6rem; margin-bottom: 8px; color: var(--ink);">Inquiry Successfully Submitted!</h3>
+                <p style="color: var(--muted); margin-bottom: 12px; font-size: 0.95rem;">
+                  Reference ID: <strong style="color: var(--electric-blue);">${result.refId}</strong>.
+                </p>
+                <p style="color: var(--muted); margin-bottom: 24px; font-size: 0.9rem; line-height: 1.5;">
+                  Your request has been registered with Acurvion Marketing. A senior strategist will review your business requirements and contact you within 24 business hours.
+                </p>
+                <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                  <a href="${result.waUrl}" target="_blank" rel="noopener" class="home-btn home-btn-whatsapp">
+                    <span>Connect on WhatsApp Now</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                  </a>
+                  <button type="button" id="modalDoneBtn" class="home-btn home-btn-secondary">Close</button>
+                </div>
+              </div>
+            `;
+
+            const doneBtn = document.getElementById('modalDoneBtn');
+            if (doneBtn) doneBtn.addEventListener('click', closeModal);
+          }
+
+          form.reset();
+        } else {
+          throw new Error(result.error || 'Server rejected submission');
         }
 
-        // Switch to success view without destroying original form!
+      } catch (err) {
+        console.error('Lead submission network error:', err);
+
+        // Fail-safe WhatsApp direct routing so lead is NEVER lost
+        const fallbackRef = 'ACV-DIRECT-' + Math.floor(100000 + Math.random() * 900000);
+        const fallbackWaText = encodeURIComponent(
+          `*New Website ${currentInquiryType} — Ref: ${fallbackRef}*\n\n` +
+          `• Name: ${name}\n` +
+          (company ? `• Business: ${company}\n` : '') +
+          `• Phone: ${phone}\n` +
+          `• Email: ${email}\n` +
+          (website ? `• Website: ${website}\n` : '') +
+          `• Service: ${service}\n` +
+          (budget ? `• Monthly Budget: ${budget}\n` : '') +
+          `• Requirements: ${notes || 'Immediate consultation requested'}`
+        );
+        const fallbackWaUrl = `https://wa.me/918825468608?text=${fallbackWaText}`;
+
         if (formContainer) formContainer.style.display = 'none';
         if (successContainer) {
           successContainer.style.display = 'block';
           successContainer.innerHTML = `
-            <div style="text-align: center; padding: 18px 0;">
-              <div style="width: 60px; height: 60px; border-radius: 50%; background: #e8f5e9; color: #2e7d32; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; box-shadow: 0 4px 14px rgba(46,125,50,0.2);">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <div style="text-align: center; padding: 20px 0;">
+              <div style="width: 60px; height: 60px; border-radius: 50%; background: #fff3cd; color: #856404; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
               </div>
-              <h3 style="font-size: 1.55rem; margin-bottom: 8px; color: var(--ink);">Inquiry Received!</h3>
-              <p style="color: var(--muted); margin-bottom: 22px; font-size: 0.95rem;">Reference ID: <strong>${refId}</strong>. Your consultation request has been forwarded to our lead growth team.</p>
+              <h3 style="font-size: 1.45rem; margin-bottom: 8px; color: var(--ink);">Direct WhatsApp Routing Ready</h3>
+              <p style="color: var(--muted); margin-bottom: 20px; font-size: 0.92rem;">
+                To guarantee your message reaches our growth desk immediately without network delays, click below to open a pre-filled direct WhatsApp session.
+              </p>
               <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-                <a href="${waUrl}" target="_blank" rel="noopener" class="home-btn home-btn-whatsapp">
-                  Open Direct WhatsApp Chat
+                <a href="${fallbackWaUrl}" target="_blank" rel="noopener" class="home-btn home-btn-whatsapp">
+                  <span>Send via WhatsApp (+91 88254 68608)</span>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
                 </a>
-                <button type="button" id="modalDoneBtn" class="home-btn home-btn-secondary">Done</button>
+                <button type="button" id="modalRetryBtn" class="home-btn home-btn-secondary">Edit Details</button>
               </div>
             </div>
           `;
 
-          const doneBtn = document.getElementById('modalDoneBtn');
-          if (doneBtn) doneBtn.addEventListener('click', closeModal);
+          const retryBtn = document.getElementById('modalRetryBtn');
+          if (retryBtn) {
+            retryBtn.addEventListener('click', () => {
+              if (formContainer) formContainer.style.display = 'block';
+              if (successContainer) successContainer.style.display = 'none';
+            });
+          }
         }
-
-        form.reset();
-        window.open(waUrl, '_blank');
-      }, 500);
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalBtnHtml;
+        }
+      }
     });
   }
 }
 
 /* ==========================================================================
-   7. INTERACTIVE METRIC COUNTERS
+   8. FEATURE CARDS & CREDIBLE FRAMEWORK OBSERVER
+   (Replaces fabricated statistics with elegant, smooth entrance transitions)
    ========================================================================== */
-function initCounters() {
-  const metricElements = document.querySelectorAll('.home-metric-val, .home-strategy-lead-num');
-  if (!metricElements.length || !('IntersectionObserver' in window)) return;
+function initFeatureCards() {
+  const cards = document.querySelectorAll('.home-metric-box, .home-pillar-box, .home-strategy-feature-item');
+  if (!cards.length || !('IntersectionObserver' in window)) return;
 
   const observer = new IntersectionObserver((entries, obs) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
-        animateMetric(entry.target);
+        entry.target.classList.add('in-view');
         obs.unobserve(entry.target);
       }
     });
-  }, { threshold: 0.3 });
+  }, { threshold: 0.2 });
 
-  metricElements.forEach(el => observer.observe(el));
-
-  function animateMetric(el) {
-    const text = el.innerText.trim();
-    if (text.includes('+320%')) {
-      countUp(el, 0, 320, 1400, '+', '%');
-    } else if (text.includes('4.8x')) {
-      countDecimal(el, 1.0, 4.8, 1400, '', 'x');
-    } else if (text.includes('98%')) {
-      countUp(el, 50, 98, 1200, '', '%');
-    }
-  }
-
-  function countUp(el, start, end, duration, prefix = '', suffix = '') {
-    const startTime = performance.now();
-    const step = (now) => {
-      const progress = Math.min((now - startTime) / duration, 1);
-      const ease = 1 - Math.pow(1 - progress, 3);
-      const val = Math.floor(start + (end - start) * ease);
-      el.innerText = `${prefix}${val}${suffix}`;
-      if (progress < 1) {
-        requestAnimationFrame(step);
-      } else {
-        el.innerText = `${prefix}${end}${suffix}`;
-      }
-    };
-    requestAnimationFrame(step);
-  }
-
-  function countDecimal(el, start, end, duration, prefix = '', suffix = '') {
-    const startTime = performance.now();
-    const step = (now) => {
-      const progress = Math.min((now - startTime) / duration, 1);
-      const ease = 1 - Math.pow(1 - progress, 3);
-      const val = (start + (end - start) * ease).toFixed(1);
-      el.innerText = `${prefix}${val}${suffix}`;
-      if (progress < 1) {
-        requestAnimationFrame(step);
-      } else {
-        el.innerText = `${prefix}${end}${suffix}`;
-      }
-    };
-    requestAnimationFrame(step);
-  }
+  cards.forEach(card => observer.observe(card));
 }
 
 /* ==========================================================================
-   8. SCROLL TO TOP FLOATING BUTTON
+   8b. ABOUT SECTION SCROLL ANIMATIONS
+   Minimal fade-up entrance for narrative text, mission/vision cards and value cards
+   ========================================================================== */
+function initAboutAnimations() {
+  if (!('IntersectionObserver' in window)) {
+    // Fallback: show all immediately
+    document.querySelectorAll('.home-about-narrative, .home-mv-card, .home-value-card')
+      .forEach(el => el.classList.add('in-view'));
+    return;
+  }
+
+  const targets = document.querySelectorAll(
+    '.home-about-narrative, .home-mv-card, .home-value-card, .home-about-feat-card'
+  );
+  if (!targets.length) return;
+
+  const observer = new IntersectionObserver((entries, obs) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('in-view');
+        obs.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+
+  targets.forEach(el => observer.observe(el));
+}
+
+/* ==========================================================================
+   9. SCROLL TO TOP FLOATING BUTTON
    ========================================================================== */
 function initScrollTop() {
   const btn = document.getElementById('scrollTopBtn');
@@ -494,13 +633,13 @@ function initScrollTop() {
 }
 
 /* ==========================================================================
-   9. SMOOTH SCROLLING FOR INTERNAL ANCHORS
+   10. SMOOTH SCROLLING FOR INTERNAL ANCHORS
    ========================================================================== */
 function initSmoothScroll() {
   document.querySelectorAll('a[href^="#"]:not([href="#"])').forEach(anchor => {
     anchor.addEventListener('click', function(e) {
       const targetId = this.getAttribute('href');
-      if (targetId === '#' || targetId === '#contact' && this.hasAttribute('data-consult-trigger')) return;
+      if (targetId === '#' || (targetId === '#contact' && this.hasAttribute('data-consult-trigger'))) return;
 
       const targetEl = document.querySelector(targetId);
       if (targetEl) {
@@ -512,4 +651,96 @@ function initSmoothScroll() {
       }
     });
   });
+}
+
+/* ==========================================================================
+   11. CONVERSION EVENT TRACKING (GTM, GA4, Meta Pixel)
+   ========================================================================== */
+function trackConversionEvent(eventName, eventData = {}) {
+  try {
+    // 1. Google Tag Manager DataLayer
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({
+      event: eventName,
+      ...eventData,
+      timestamp: new Date().toISOString()
+    });
+
+    // 2. Google Analytics 4 gtag support if configured
+    if (typeof window.gtag === 'function') {
+      window.gtag('event', eventName, eventData);
+    }
+
+    // 3. Meta Pixel fbq support if configured
+    if (typeof window.fbq === 'function') {
+      if (eventName === 'contact_form_submission') {
+        window.fbq('track', 'Lead', eventData);
+      } else if (eventName === 'consultation_booking_click') {
+        window.fbq('track', 'Schedule', eventData);
+      } else {
+        window.fbq('trackCustom', eventName, eventData);
+      }
+    }
+
+    // Diagnostic console trace (helpful during verification)
+    console.log(`[Acurvion Tracking] Event: ${eventName}`, eventData);
+  } catch (err) {
+    console.warn('Tracking dispatch notice:', err);
+  }
+}
+
+function initEventTracking() {
+  // WhatsApp Clicks
+  document.querySelectorAll('a[href*="wa.me"]').forEach(link => {
+    link.addEventListener('click', () => {
+      trackConversionEvent('whatsapp_click', {
+        destination: link.getAttribute('href'),
+        label: link.innerText.trim() || 'WhatsApp CTA'
+      });
+    });
+  });
+
+  // Phone Call Clicks
+  document.querySelectorAll('a[href^="tel:"]').forEach(link => {
+    link.addEventListener('click', () => {
+      trackConversionEvent('phone_call_click', {
+        phone_number: link.getAttribute('href')
+      });
+    });
+  });
+
+  // Email Clicks
+  document.querySelectorAll('a[href^="mailto:"]').forEach(link => {
+    link.addEventListener('click', () => {
+      trackConversionEvent('email_click', {
+        email: link.getAttribute('href')
+      });
+    });
+  });
+
+  // Consultation Trigger Clicks
+  document.querySelectorAll('[data-consult-trigger]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      trackConversionEvent('consultation_booking_click', {
+        service_hint: btn.getAttribute('data-service') || 'general'
+      });
+    });
+  });
+
+  // Website Audit Trigger Clicks
+  document.querySelectorAll('[data-audit-trigger]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      trackConversionEvent('website_audit_click', {
+        page: window.location.pathname
+      });
+    });
+  });
+
+  // Track service page visit if on dedicated service page
+  if (window.location.pathname.includes('/services/')) {
+    trackConversionEvent('service_page_view', {
+      page_path: window.location.pathname,
+      page_title: document.title
+    });
+  }
 }
